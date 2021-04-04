@@ -1,0 +1,139 @@
+---
+title: "sta457_assignment3"
+author: "Xiaoya Li"
+date: "17/03/2021"
+output: pdf_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+####Question 1
+a)
+
+```{r}
+a <- c(0:10)
+rou_1 <- (-1.002416)*(1.084652)^(-a)*cos(a*(0.86217)+3.0722)
+rou_1
+```
+
+
+```{r}
+check_rou1 <- ARMAacf(ar=c(1.2, -0.85), ma= 0,10)
+check_rou1
+```
+\newpage
+
+b)
+
+```{r}
+b <- c(0:10)
+rou_2 <- (2)^(-b)*(1+0.6*b)
+rou_2
+```
+\newpage
+```{r}
+check_rou2 <- ARMAacf(ar=c(1, -0.25), ma= 0,10)
+check_rou2
+```
+
+
+
+Question 2
+```{r}
+set.seed(1004143125)
+
+phi  <- c()
+theta <-c()
+sigma <- c()
+
+for (k in 1:3){
+  #generate 500 obs from the ARMA(1,1) model
+  ARMA_1_1 = arima.sim(list( ar=0.9, ma=-0.9), n= 500, sd=1)
+  mle = arima(ARMA_1_1, order = c(1, 0, 1))
+  phi[k] <- round(mle$coef["ar1"], 4)
+  theta[k] <- round(mle$coef["ma1"], 4)
+  sigma[k] <- round(mle$sigma2, 4)
+  # save the estimated parameter into vectors
+  
+  plot.ts(ARMA_1_1) # plot the simulation
+  acf(ARMA_1_1, 50) #the ACF of simulations 
+  pacf(ARMA_1_1, 50) # the PACF of simulations
+                 
+}
+```
+```{r}
+plot(phi, theta, xlim= c(-1,1), ylim = c(-1, 1),xlab = "Estimated phi", ylab = "Estimated theta", main = "Estimated Parameters & True Parameters comparison", col="blue")
+
+points(0.9, -0.9, col= "red")
+
+legend("right", legend = c("Estimated parameter", "True parameter"), fill = c("blue","red"), cex = 0.4)
+
+```
+#a) 
+The plot "Estimated Parameters & True Parameters comparison" above shows three estimated values on the x-axis and the true value on the y axis. The blue point represents the estimated values and the red point represents the true value.
+
+#b) 
+The first 9 plots show the three simulated data with their ACF and PACF. The plots show the three simulated data have different patterns, but the ACF and PACF are similar to each other. Therefore, we can conclude the simulated data have randomness, the three simulations have different parameter estimates. 
+
+####Question 3
+a)
+```{r}
+library(astsa)
+library("lmtest")
+ols = ar.ols(cmort, order = 2, demean = FALSE, intercept = TRUE)
+ols
+```
+```{r}
+ols$asy.se.coef #the standard error for the estimates
+```
+
+```{r}
+t.phi1= 0.4286/0.03979433
+t.phi1 > qnorm(0.975) #test if the phi1 is significant
+```
+```{r}
+t.phi2= 0.4418/0.03976163
+t.phi2 > qnorm(0.975) #test if the phi2 is significant
+```
+```{r}
+t.intercept= 11/2.393673
+t.intercept > qnorm(0.975) #test if the intercept is significant
+```
+we have the linear regression model is:
+$x_t$ = 11.45+0.4286$x_{t-1}$ + 0.4418$x_{t-2}$
+By using t-test, we can conclude that all the estimated parameters are significant. 
+
+b)
+```{r}
+forecast = predict(ols, n.ahead = 4)
+forecast$pred # get the forecasts
+```
+```{r}
+#get the prediction intervals' lower and upper bound
+low = forecast$pred - forecast$se * qnorm(0.975)
+low
+up = forecast$pred - forecast$se * qnorm(0.975)
+up
+```
+
+
+```{r}
+ts.plot(cmort, forecast$pred, col = 1:2, xlim = c(1978.5, 1980), ylab = "cmort", main = "the Forecasts Over a Four Week Horizon")
+xx = c(time(up), rev(time(up))); yy=c(low,rev(up))
+polygon(xx,yy,border = 8, col = gray(0.6, alpha = 0.2))
+lines(forecast$pred, type = "p", col=2)
+# the four forecasts data from 1978.5, because the intervals will be very small if we use all the raw data.
+```
+
+we can conclude that :
+$x^n_{n=1}$ = 87.59986, the prediction interval for $x^n_{n=1}$ is (76.45777, 98.74196)
+
+$x^n_{n=2}$ = 86.76349, the prediction interval for $x^n_{n=2}$ is (74.64117, 98.88581 )
+
+$x^n_{n=3}$ = 87.33714, the prediction interval for $x^n_{n=3}$ is (73.35431, 101.31997)
+
+$x^n_{n=4}$ = 87.21350, the prediction interval for $x^n_{n=4}$ is (72.33079, 102.09621)
+
+
